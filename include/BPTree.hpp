@@ -92,10 +92,12 @@ public:
     Node();
 };
 
-Node::ptr::ptr() {
+Node::ptr::ptr()
+{
 }
 
-Node::ptr::~ptr() {
+Node::ptr::~ptr()
+{
 }
 
 Node::Node()
@@ -127,12 +129,13 @@ public:
     BPTree();
     BPTree(int degreeInternal, int degreeLeaf);
     Node *getRoot();
-  //  uint32_t getMaxIntChildLimit();
-  //  uint32_t getMaxLeafNodeLimit();
+    //  uint32_t getMaxIntChildLimit();
+    //  uint32_t getMaxLeafNodeLimit();
     void setRoot(Node *);
     // void display(Node* cursor);
     // void seqDisplay(Node* cursor);
     IndexV Get(uint64_t key); //
+    //void Insert(uint64_t key, IndexV dataPtr);
     void Insert(uint64_t key, IndexV dataPtr);
     // void insert(uint64_t key, FILE* filePtr);
     // void removeKey(uint32_t key);
@@ -159,23 +162,28 @@ BPTree::BPTree(int degreeInternal, int degreeLeaf)
     this->root = NULL;
 }
 
-Node** BPTree::findParent(Node* cursor, Node* child) {
+Node **BPTree::findParent(Node *cursor, Node *child)
+{
     /*
-		Finds parent using depth first traversal and ignores leaf nodes as they cannot be parents
-		also ignores second last level because we will never find parent of a leaf node during insertion using this function
-	*/
-    Node* parent = NULL;
+        Finds parent using depth first traversal and ignores leaf nodes as they cannot be parents
+        also ignores second last level because we will never find parent of a leaf node during insertion using this function
+    */
+    Node *parent = NULL;
 
     if (cursor->isLeaf || cursor->ptr2TreeOrData.ptr2Tree[0]->isLeaf)
         return NULL;
 
-    for (int i = 0; i < cursor->ptr2TreeOrData.ptr2Tree.size(); i++) {
-        if (cursor->ptr2TreeOrData.ptr2Tree[i] == child) {
+    for (int i = 0; i < cursor->ptr2TreeOrData.ptr2Tree.size(); i++)
+    {
+        if (cursor->ptr2TreeOrData.ptr2Tree[i] == child)
+        {
             parent = cursor;
-        } else {
-            //Commenting To Remove vector out of bound Error: 
-            //new (&cursor->ptr2TreeOrData.ptr2Tree) std::vector<Node*>;
-            Node* tmpCursor = cursor->ptr2TreeOrData.ptr2Tree[i];
+        }
+        else
+        {
+            // Commenting To Remove vector out of bound Error:
+            // new (&cursor->ptr2TreeOrData.ptr2Tree) std::vector<Node*>;
+            Node *tmpCursor = cursor->ptr2TreeOrData.ptr2Tree[i];
             findParent(tmpCursor, child);
         }
     }
@@ -183,8 +191,8 @@ Node** BPTree::findParent(Node* cursor, Node* child) {
     return &parent;
 }
 
-
-Node* BPTree::firstLeftNode(Node* cursor) {
+Node *BPTree::firstLeftNode(Node *cursor)
+{
     if (cursor->isLeaf)
         return cursor;
     for (int i = 0; i < cursor->ptr2TreeOrData.ptr2Tree.size(); i++)
@@ -194,26 +202,30 @@ Node* BPTree::firstLeftNode(Node* cursor) {
     return NULL;
 }
 
-
-void BPTree::insertInternal(uint64_t x, Node** cursor, Node** child) {  //in Internal Nodes
-    if ((*cursor)->keys.size() < maxIntChildLimit - 1) {
+void BPTree::insertInternal(uint64_t x, Node **cursor, Node **child)
+{ // in Internal Nodes
+    if ((*cursor)->keys.size() < maxIntChildLimit - 1)
+    {
         /*
-			If cursor is not full find the position for the new key.
-		*/
+            If cursor is not full find the position for the new key.
+        */
         int i = std::upper_bound((*cursor)->keys.begin(), (*cursor)->keys.end(), x) - (*cursor)->keys.begin();
         (*cursor)->keys.push_back(x);
-        //new (&(*cursor)->ptr2TreeOrData.ptr2Tree) std::vector<Node*>;
+        // new (&(*cursor)->ptr2TreeOrData.ptr2Tree) std::vector<Node*>;
         //// now, root->ptr2TreeOrData.ptr2Tree is the active member of the union
         (*cursor)->ptr2TreeOrData.ptr2Tree.push_back(*child);
 
-        if (i != (*cursor)->keys.size() - 1) {  // if there are more than one element
+        if (i != (*cursor)->keys.size() - 1)
+        { // if there are more than one element
             // Different loops because size is different for both (i.e. diff of one)
 
-            for (int j = (*cursor)->keys.size() - 1; j > i; j--) {  // shifting the position for keys and datapointer
+            for (int j = (*cursor)->keys.size() - 1; j > i; j--)
+            { // shifting the position for keys and datapointer
                 (*cursor)->keys[j] = (*cursor)->keys[j - 1];
             }
 
-            for (int j = (*cursor)->ptr2TreeOrData.ptr2Tree.size() - 1; j > (i + 1); j--) {
+            for (int j = (*cursor)->ptr2TreeOrData.ptr2Tree.size() - 1; j > (i + 1); j--)
+            {
                 (*cursor)->ptr2TreeOrData.ptr2Tree[j] = (*cursor)->ptr2TreeOrData.ptr2Tree[j - 1];
             }
 
@@ -221,23 +233,28 @@ void BPTree::insertInternal(uint64_t x, Node** cursor, Node** child) {  //in Int
             (*cursor)->ptr2TreeOrData.ptr2Tree[i + 1] = *child;
         }
         cout << "Inserted key in the internal node :)" << endl;
-    } else {  //splitting
+    }
+    else
+    { // splitting
         cout << "Inserted Node in internal node successful" << endl;
         cout << "Overflow in internal:( HAIYAA! splitting internal nodes" << endl;
 
         vector<uint64_t> virtualKeyNode((*cursor)->keys);
-        vector<Node*> virtualTreePtrNode((*cursor)->ptr2TreeOrData.ptr2Tree);
+        vector<Node *> virtualTreePtrNode((*cursor)->ptr2TreeOrData.ptr2Tree);
 
-        int i = std::upper_bound((*cursor)->keys.begin(), (*cursor)->keys.end(), x) - (*cursor)->keys.begin();  //finding the position for x
-        virtualKeyNode.push_back(x);                                                                   // to create space
-        virtualTreePtrNode.push_back(*child);                                                           // to create space
+        int i = std::upper_bound((*cursor)->keys.begin(), (*cursor)->keys.end(), x) - (*cursor)->keys.begin(); // finding the position for x
+        virtualKeyNode.push_back(x);                                                                           // to create space
+        virtualTreePtrNode.push_back(*child);                                                                  // to create space
 
-        if (i != virtualKeyNode.size() - 1) {
-            for (int j = virtualKeyNode.size() - 1; j > i; j--) {  // shifting the position for keys and datapointer
+        if (i != virtualKeyNode.size() - 1)
+        {
+            for (int j = virtualKeyNode.size() - 1; j > i; j--)
+            { // shifting the position for keys and datapointer
                 virtualKeyNode[j] = virtualKeyNode[j - 1];
             }
 
-            for (int j = virtualTreePtrNode.size() - 1; j > (i + 1); j--) {
+            for (int j = virtualTreePtrNode.size() - 1; j > (i + 1); j--)
+            {
                 virtualTreePtrNode[j] = virtualTreePtrNode[j - 1];
             }
 
@@ -245,61 +262,70 @@ void BPTree::insertInternal(uint64_t x, Node** cursor, Node** child) {  //in Int
             virtualTreePtrNode[i + 1] = *child;
         }
 
-        uint64_t partitionKey;                                            //exclude middle element while splitting
-        partitionKey = virtualKeyNode[(virtualKeyNode.size() / 2)];  //right biased
+        uint64_t partitionKey;                                      // exclude middle element while splitting
+        partitionKey = virtualKeyNode[(virtualKeyNode.size() / 2)]; // right biased
         int partitionIdx = (virtualKeyNode.size() / 2);
 
-        //resizing and copying the keys & TreePtr to OldNode
+        // resizing and copying the keys & TreePtr to OldNode
         (*cursor)->keys.resize(partitionIdx);
         (*cursor)->ptr2TreeOrData.ptr2Tree.resize(partitionIdx + 1);
         (*cursor)->ptr2TreeOrData.ptr2Tree.reserve(partitionIdx + 1);
-        for (int i = 0; i < partitionIdx; i++) {
+        for (int i = 0; i < partitionIdx; i++)
+        {
             (*cursor)->keys[i] = virtualKeyNode[i];
         }
 
-        for (int i = 0; i < partitionIdx + 1; i++) {
+        for (int i = 0; i < partitionIdx + 1; i++)
+        {
             (*cursor)->ptr2TreeOrData.ptr2Tree[i] = virtualTreePtrNode[i];
         }
 
-        Node* newInternalNode = new Node;
-        new (&newInternalNode->ptr2TreeOrData.ptr2Tree) std::vector<Node*>;
-        //Pushing new keys & TreePtr to NewNode
+        Node *newInternalNode = new Node;
+        new (&newInternalNode->ptr2TreeOrData.ptr2Tree) std::vector<Node *>;
+        // Pushing new keys & TreePtr to NewNode
 
-        for (int i = partitionIdx + 1; i < virtualKeyNode.size(); i++) {
+        for (int i = partitionIdx + 1; i < virtualKeyNode.size(); i++)
+        {
             newInternalNode->keys.push_back(virtualKeyNode[i]);
         }
 
-        for (int i = partitionIdx + 1; i < virtualTreePtrNode.size(); i++) {  // because only key is excluded not the pointer
+        for (int i = partitionIdx + 1; i < virtualTreePtrNode.size(); i++)
+        { // because only key is excluded not the pointer
             newInternalNode->ptr2TreeOrData.ptr2Tree.push_back(virtualTreePtrNode[i]);
         }
 
-        if ((*cursor) == root) {
+        if ((*cursor) == root)
+        {
             /*
-				If cursor is a root we create a new Node
-			*/
-            Node* newRoot = new Node;
+                If cursor is a root we create a new Node
+            */
+            Node *newRoot = new Node;
             newRoot->keys.push_back(partitionKey);
-            new (&newRoot->ptr2TreeOrData.ptr2Tree) std::vector<Node*>;
+            new (&newRoot->ptr2TreeOrData.ptr2Tree) std::vector<Node *>;
             newRoot->ptr2TreeOrData.ptr2Tree.push_back(*cursor);
             //// now, newRoot->ptr2TreeOrData.ptr2Tree is the active member of the union
             newRoot->ptr2TreeOrData.ptr2Tree.push_back(newInternalNode);
 
             root = newRoot;
             cout << "Created new ROOT!" << endl;
-        } else {
+        }
+        else
+        {
             /*
-				::Recursion::
-			*/
+                ::Recursion::
+            */
             insertInternal(partitionKey, findParent(root, *cursor), &newInternalNode);
         }
     }
 }
 
-Node* BPTree::getRoot() {
+Node *BPTree::getRoot()
+{
     return this->root;
 }
 
-void BPTree::setRoot(Node *ptr) {
+void BPTree::setRoot(Node *ptr)
+{
     this->root = ptr;
 }
 
@@ -415,30 +441,42 @@ void BPTree::Insert(uint64_t key, IndexV dataPtr)
     }
 }
 
-IndexV BPTree::Get(uint64_t key){
-    if (root == NULL) {
+IndexV BPTree::Get(uint64_t key)
+{
+    if (root == NULL)
+    {
         std::cout << "NO Tuples Inserted yet" << endl;
-       // return;
-    } else {
-        Node* cursor = root;
-        while (cursor->isLeaf == false) {
+        // std::throw "NO Tuples Inserted yet" ;
+        // return;
+    }
+    else
+    {
+        Node *cursor = root;
+        while (cursor->isLeaf == false)
+        {
             /*
-				upper_bound returns an iterator pointing to the first element in the range
-				[first,last) which has a value greater than �val�.(Because we are storing the
-				same value in the right node;(STL is doing Binary search at back end)
-			*/
+                upper_bound returns an iterator pointing to the first element in the range
+                [first,last) which has a value greater than �val�.(Because we are storing the
+                same value in the right node;(STL is doing Binary search at back end)
+            */
             int idx = std::upper_bound(cursor->keys.begin(), cursor->keys.end(), key) - cursor->keys.begin();
-            cursor = cursor->ptr2TreeOrData.ptr2Tree[idx];  //upper_bound takes care of all the edge cases
+            cursor = cursor->ptr2TreeOrData.ptr2Tree[idx]; // upper_bound takes care of all the edge cases
         }
 
-        int idx = std::lower_bound(cursor->keys.begin(), cursor->keys.end(), key) - cursor->keys.begin();  //Binary search
-
-        if (idx == cursor->keys.size() || cursor->keys[idx] != key) {
-            cout << "HUH!! Key NOT FOUND" << endl;
-           // return;
+        int idx = std::lower_bound(cursor->keys.begin(), cursor->keys.end(), key) - cursor->keys.begin(); // Binary search
+        try
+        {
+            /* code */
+            if (idx == cursor->keys.size() || cursor->keys[idx] != key)
+            {
+                cout << "HUH!! Key NOT FOUND" << endl;
+            }
         }
-       
+        catch (const std::exception &e)
+        {
+            std::cerr << e.what() << 'Key NOT FOUND\n';
+        }
+
         return cursor->ptr2TreeOrData.dataPtr[idx];
     }
-    
 }
