@@ -134,15 +134,17 @@ public:
     void setRoot(Node *);
     // void display(Node* cursor);
     // void seqDisplay(Node* cursor);
-    IndexV Get(uint64_t key); //
+    IndexV Get(const uint64_t& key); //
     //void Insert(uint64_t key, IndexV dataPtr);
     void Insert(uint64_t key, IndexV dataPtr);
     // void insert(uint64_t key, FILE* filePtr);
     // void removeKey(uint32_t key);
     // void removeInternal(uint32_t x, Node* cursor, Node* child);
     //*********  micro-benchmark    ********
-    // void getNeighbors(uint32_t srcVID, vector<uint32_t> &adjList); //for bfs,return the adj-list of srcVID
-    // void getNeighborsFromIndex(uint32_t key);
+     //void getNeighbors(uint64_t key, vector<uint64_t> &adjList); //for bfs,return the adj-list of srcVID
+     void getNeighbors(uint64_t VID, vector<IndexV> &adjList); //return the adj-list address of srcVID
+     void getNeighborsFromIndex(uint64_t VID, int& countFromIndex);
+     //void getNeighborsFromIndex(uint64_t key,uint64_t countFromIndex);
     // void getNeighborsFromData(uint32_t key);
     // void bfsFromIndex(uint32_t key);
     // void bfsFromData(uint32_t key);
@@ -232,7 +234,7 @@ void BPTree::insertInternal(uint64_t x, Node **cursor, Node **child)
             (*cursor)->keys[i] = x;
             (*cursor)->ptr2TreeOrData.ptr2Tree[i + 1] = *child;
         }
-        cout << "Inserted key in the internal node :)" << endl;
+        //cout << "Inserted key in the internal node :)" << endl;
     }
     else
     { // splitting
@@ -376,7 +378,7 @@ void BPTree::Insert(uint64_t key, IndexV dataPtr)
                 cursor->keys[i] = key;
                 cursor->ptr2TreeOrData.dataPtr[i] = dataPtr;
             }
-            cout << "Inserted successfully: " << key << endl;
+           // cout << "Inserted successfully: " << key << endl;
         }
         else
         {
@@ -441,7 +443,7 @@ void BPTree::Insert(uint64_t key, IndexV dataPtr)
     }
 }
 
-IndexV BPTree::Get(uint64_t key)
+IndexV BPTree::Get(const uint64_t& key)
 {
     if (root == NULL)
     {
@@ -476,7 +478,124 @@ IndexV BPTree::Get(uint64_t key)
         {
             std::cerr << e.what() << 'Key NOT FOUND\n';
         }
-
-        return cursor->ptr2TreeOrData.dataPtr[idx];
+        IndexV offset;
+        offset = cursor->ptr2TreeOrData.dataPtr[idx];
+        return offset;
     }
+}
+
+void BPTree::getNeighborsFromIndex(uint64_t VID,int& countFromIndex)
+{
+    //range query
+    //构造起始和终止的 Key
+    uint64_t endVID = VID + 1;
+    uint64_t endKey = endVID << 32;
+    uint64_t key = VID << 32;
+
+     if (root == NULL)
+    {
+        cout << "NO Tuples Inserted yet" << endl;
+        return;
+    }
+    else
+    {
+        Node *cursor = root;
+        while (cursor->isLeaf == false)
+        {
+
+            int idx = std::upper_bound(cursor->keys.begin(), cursor->keys.end(), key) - cursor->keys.begin();
+            cursor = cursor->ptr2TreeOrData.ptr2Tree[idx]; // upper_bound takes care of all the edge cases
+        }
+
+        int idx = std::lower_bound(cursor->keys.begin(), cursor->keys.end(), key) - cursor->keys.begin(); // Binary search
+
+        if (idx == cursor->keys.size() || cursor->keys[idx] != key)
+        {
+           // cout << "HUH!! Key NOT FOUND" << endl;
+            return;
+        }
+        // print all neighbors
+        idx++;
+        if (idx == cursor->keys.size())
+        {
+            cursor = cursor->ptr2next;
+            idx = 0;
+        }
+        while (cursor->keys[idx] < endKey)
+        {
+
+            //  uint32_t desVID = cursor->keys[idx] & 0x00001111;
+           // uint64_t desVID = cursor->keys[idx] - key;
+           countFromIndex ++;
+           // std::cout << "  desVID is:\t" << desVID;
+            idx++;
+            if (idx == cursor->keys.size())
+            {
+                cursor = cursor->ptr2next;
+                idx = 0;
+            }
+        }
+    }
+
+}
+
+
+
+
+
+//return address of neighbors
+ void BPTree::getNeighbors(uint64_t VID, vector<IndexV> &adjList){
+      //range query
+    //构造起始和终止的 Key
+    uint64_t endVID = VID + 1;
+    uint64_t endKey = endVID << 32;
+    uint64_t key = VID << 32;
+
+ if (root == NULL)
+    {
+        cout << "NO Tuples Inserted yet" << endl;
+        return;
+    }
+    else
+    {
+        Node *cursor = root;
+        while (cursor->isLeaf == false)
+        {
+
+            int idx = std::upper_bound(cursor->keys.begin(), cursor->keys.end(), key) - cursor->keys.begin();
+            cursor = cursor->ptr2TreeOrData.ptr2Tree[idx]; // upper_bound takes care of all the edge cases
+        }
+
+        int idx = std::lower_bound(cursor->keys.begin(), cursor->keys.end(), key) - cursor->keys.begin(); // Binary search
+
+        if (idx == cursor->keys.size() || cursor->keys[idx] != key)
+        {
+           // cout << "HUH!! Key NOT FOUND" << endl;
+            return;
+        }
+        // print all neighbors
+        idx++;
+        if (idx == cursor->keys.size())
+        {
+            cursor = cursor->ptr2next;
+            idx = 0;
+        }
+        while (cursor->keys[idx] < endKey)
+        {
+
+            //  uint32_t desVID = cursor->keys[idx] & 0x00001111;
+            uint32_t desVID = cursor->keys[idx] - key;
+           
+            idx++;
+            if (idx == cursor->keys.size())
+            {
+                cursor = cursor->ptr2next;
+                idx = 0;
+            }
+            IndexV offset = cursor->ptr2TreeOrData.dataPtr[idx];
+            adjList.push_back(offset);
+        }
+    }
+   
+
 }

@@ -376,6 +376,9 @@ class Viper {
         bool get(const K& key, V* value);
         bool get(const K& key, V* value) const;
 
+        bool get_khop_neighbors_from_index(uint64_t& srcVID, int& hop,int& count);
+        bool get_khop_neighbors_from_data(uint64_t& srcVID, int& count);
+        
         template <typename UpdateFn>
         bool update(const K& key, UpdateFn update_fn);
 
@@ -484,7 +487,7 @@ std::unique_ptr<Viper<K, V>> Viper<K, V>::open(const std::string& pool_file, Vip
 template <typename K, typename V>
 Viper<K, V>::Viper(ViperBase v_base, const std::filesystem::path pool_dir, const bool owns_pool, const ViperConfig v_config) :
    // v_base_{v_base}, map_{131072}, owns_pool_{owns_pool}, v_config_{v_config}, pool_dir_{pool_dir},
-    v_base_{v_base}, map_{32,32}, owns_pool_{owns_pool}, v_config_{v_config}, pool_dir_{pool_dir},
+    v_base_{v_base}, map_{32,1024}, owns_pool_{owns_pool}, v_config_{v_config}, pool_dir_{pool_dir},
     resize_threshold_{v_config.resize_threshold}, reclaim_threshold_{v_config.reclaim_threshold},
     num_recovery_threads_{v_config.num_recovery_threads} {
     current_block_page_ = 0;
@@ -1264,6 +1267,32 @@ bool Viper<K, V>::ReadOnlyClient::get(const K& key, V* value) const {
 template <typename K, typename V>
 bool Viper<K, V>::Client::get(const K& key, V* value) const {
     return static_cast<const Viper<K, V>::ReadOnlyClient*>(this)->get(key, value);
+}
+
+
+/**
+ * get neighbors form index
+*/
+template <typename K, typename V>
+bool Viper<K, V>::Client::get_khop_neighbors_from_index(uint64_t& srcVID, int& hop,int& count){
+    this->viper_.map_.getNeighborsFromIndex(srcVID,count);
+
+}
+
+/**
+ * get neighbors form index
+*/
+template <typename K, typename V>
+bool Viper<K, V>::Client::get_khop_neighbors_from_data(uint64_t& srcVID, int& count){
+     vector<KVOffset> adjListAddress;
+     //返回叶子节点的指针
+    this->viper_.map_.getNeighbors(srcVID,adjListAddress);
+    uint64_t value;
+    for(auto n : adjListAddress){
+          count++;
+          get_value_from_offset(n, &value);
+    }
+
 }
 
 /**
