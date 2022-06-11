@@ -164,13 +164,17 @@ BPTree::BPTree(int degreeInternal, int degreeLeaf)
     this->root = NULL;
 }
 
+//
+static Node* forParent = NULL;
+
 Node **BPTree::findParent(Node *cursor, Node *child)
 {
     /*
         Finds parent using depth first traversal and ignores leaf nodes as they cannot be parents
         also ignores second last level because we will never find parent of a leaf node during insertion using this function
     */
-    Node *parent = NULL;
+    std::cout<<"inside findParent\n";
+  //  Node *parent = NULL;
 
     if (cursor->isLeaf || cursor->ptr2TreeOrData.ptr2Tree[0]->isLeaf)
         return NULL;
@@ -179,7 +183,8 @@ Node **BPTree::findParent(Node *cursor, Node *child)
     {
         if (cursor->ptr2TreeOrData.ptr2Tree[i] == child)
         {
-            parent = cursor;
+           // parent = cursor;
+           forParent = cursor;
         }
         else
         {
@@ -190,7 +195,8 @@ Node **BPTree::findParent(Node *cursor, Node *child)
         }
     }
 
-    return &parent;
+    //return &parent;
+    return &forParent;
 }
 
 Node *BPTree::firstLeftNode(Node *cursor)
@@ -206,14 +212,16 @@ Node *BPTree::firstLeftNode(Node *cursor)
 
 void BPTree::insertInternal(uint64_t x, Node **cursor, Node **child)
 { // in Internal Nodes
+std::cout<<"inside\n\n";
     if ((*cursor)->keys.size() < maxIntChildLimit - 1)
     {
         /*
             If cursor is not full find the position for the new key.
         */
+        std::cout<<"L215 if\n";
         int i = std::upper_bound((*cursor)->keys.begin(), (*cursor)->keys.end(), x) - (*cursor)->keys.begin();
         (*cursor)->keys.push_back(x);
-        // new (&(*cursor)->ptr2TreeOrData.ptr2Tree) std::vector<Node*>;
+        //new (&(*cursor)->ptr2TreeOrData.ptr2Tree) std::vector<Node*>;
         //// now, root->ptr2TreeOrData.ptr2Tree is the active member of the union
         (*cursor)->ptr2TreeOrData.ptr2Tree.push_back(*child);
 
@@ -247,6 +255,7 @@ void BPTree::insertInternal(uint64_t x, Node **cursor, Node **child)
         int i = std::upper_bound((*cursor)->keys.begin(), (*cursor)->keys.end(), x) - (*cursor)->keys.begin(); // finding the position for x
         virtualKeyNode.push_back(x);                                                                           // to create space
         virtualTreePtrNode.push_back(*child);                                                                  // to create space
+        std::cout<<"L250 create space\n";
 
         if (i != virtualKeyNode.size() - 1)
         {
@@ -295,7 +304,7 @@ void BPTree::insertInternal(uint64_t x, Node **cursor, Node **child)
         { // because only key is excluded not the pointer
             newInternalNode->ptr2TreeOrData.ptr2Tree.push_back(virtualTreePtrNode[i]);
         }
-
+std::cout<<"L299 root\n";
         if ((*cursor) == root)
         {
             /*
@@ -316,7 +325,10 @@ void BPTree::insertInternal(uint64_t x, Node **cursor, Node **child)
             /*
                 ::Recursion::
             */
+            std::cout<<"L320 recur\n\n";
             insertInternal(partitionKey, findParent(root, *cursor), &newInternalNode);
+            std::cout<<"after inser\n";
+
         }
     }
 }
@@ -584,7 +596,7 @@ void BPTree::getNeighborsFromIndex(uint64_t VID,int& countFromIndex)
         {
 
             //  uint32_t desVID = cursor->keys[idx] & 0x00001111;
-            uint32_t desVID = cursor->keys[idx] - key;
+          //  uint32_t desVID = cursor->keys[idx] - key;
            
             idx++;
             if (idx == cursor->keys.size())
